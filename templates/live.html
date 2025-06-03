@@ -1,8 +1,18 @@
 {% extends "dashboard.html" %} {% block content %}
-<h1>Live Pest Detection</h1>
-<img
-  id="video-stream"
-  src="{{ url_for('video_feed') }}"
-  alt="Live Pest Detection Stream"
-/>
+<h1>Live Pest Detection - 3 Camera Feeds</h1>
+
+<div style="display: flex; gap: 20px">
+  <div>
+    <h3>Camera 1</h3>
+    <img src="{{ url_for('video_feed1') }}" width="400" />
+  </div>
+  <div>
+    <h3>Camera 2</h3>
+    <img src="{{ url_for('video_feed2') }}" width="400" />
+  </div>
+  <div>
+    <h3>Camera 3</h3>
+    <img src="{{ url_for('video_feed3') }}" width="400" />
+  </div>
+</div>
 {% endblock %}

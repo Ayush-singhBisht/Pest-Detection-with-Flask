@@ -1,4 +1,46 @@
 {% extends "dashboard.html" %} {% block content %}
-<h1>Detection Logs</h1>
-<p>Coming soon...</p>
-{% endblock %}
+<h1 class="text-info mb-4">🪲 Detection Logs</h1>
+
+{% if logs %}
+<div class="table-responsive">
+  <table class="table">
+    <thead class="table-dark">
+      <tr>
+        <th>Pest Type</th>
+        <th>Confidence</th>
+        <th>Timestamp</th>
+        <th>Danger Level</th>
+        <th>Camera Source</th>
+        <th>Camera Number</th>
+        <!-- New column -->
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr>
+        <td><strong>{{ log.class_name }}</strong></td>
+        <td>{{ (log.confidence * 100) | round(2) }}%</td>
+        <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+        <td>
+          {% if log.class_name in ['Cockroach', 'Fly', 'Lizard', 'Rat', 'Snake']
+          %}
+          <span class="badge bg-danger">High</span>
+          {% elif log.class_name in ['Mosquito', 'Moths', 'Spider'] %}
+          <span class="badge bg-warning text-dark">Medium</span>
+          {% else %}
+          <span class="badge bg-success">Low</span>
+          {% endif %}
+        </td>
+        <td>{{ log.source }}</td>
+        <td>
+          {% if 'Camera' in log.source %} {{ log.source.split(' ')[1] }} {% else
+          %} N/A {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="text-warning">No detection logs found.</p>
+{% endif %} {% endblock %}

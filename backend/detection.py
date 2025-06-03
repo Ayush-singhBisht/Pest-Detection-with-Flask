@@ -6,12 +6,13 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras import Sequential
 from tensorflow.keras.applications import ResNet50V2
 from tensorflow.keras.layers import Dense, Dropout, Flatten, BatchNormalization, Input
+from backend.logger import log_detection  
 
-# Initialize pygame for sound
+# # Initialize pygame for sound
 pygame.mixer.init()
-warning_sound = pygame.mixer.Sound("backend/warning1.wav")  # Ensure the path is correct
+warning_sound = pygame.mixer.Sound("backend/warning.wav")
 
-# Optional: Enable memory growth for GPU
+# Enable GPU memory growth
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
     try:
@@ -20,11 +21,10 @@ if gpus:
     except Exception as e:
         print(f"GPU memory growth error: {e}")
 
-# Class names
+# Class names and danger categories
 class_names = ['Ant', 'Centipede', 'Cockroach', 'Fly', 'Human', 'Lizard',
                'Mosquito', 'Moths', 'Rat', 'Snake', 'Spider', 'Wasp']
 
-# Danger categories
 red_warning = {'Cockroach', 'Fly', 'Lizard', 'Rat', 'Snake'}
 yellow_warning = {'Mosquito', 'Moths', 'Spider'}
 
@@ -59,11 +59,98 @@ except Exception as e:
     model.load_weights("backend/ResNet50_Transfer_Learning.keras")
     print("Weights loaded successfully!")
 
-# OpenCV camera stream
-camera = cv2.VideoCapture(0)
+# # OpenCV camera stream
+# camera = cv2.VideoCapture(2)
 
-def gen_frames():
-    sound_played = False  # To prevent repeated sound
+# def gen_frames():
+#     sound_played = False
+#     last_logged_class = None
+#     last_logged_confidence = 0.0
+#     confidence_threshold = 0.05
+
+#     while True:
+#         success, frame = camera.read()
+#         if not success:
+#             break
+
+#         img = cv2.resize(frame, (224, 224))
+#         img = img.astype('float32') / 255.0
+#         img = np.expand_dims(img, axis=0)
+
+#         try:
+#             prediction = model.predict(img, verbose=0)
+#             class_index = np.argmax(prediction)
+#             confidence = float(np.max(prediction))
+#             class_name = class_names[class_index]
+#             label = f"{class_name}: {confidence * 100:.2f}%"
+
+
+#             if (class_name != last_logged_class) or (abs(confidence - last_logged_confidence) > confidence_threshold):
+#                 log_detection(class_name, confidence, source='Live')
+#                 last_logged_class = class_name
+#                 last_logged_confidence = confidence
+
+#         except Exception as e:
+#             label = f"Prediction error: {e}"
+#             class_name = ""
+#             confidence = 0.0
+
+
+#         if class_name in red_warning:
+#             color = (0, 0, 255)  # Red
+#             if not sound_played:
+#                 try:
+#                     warning_sound.play()
+#                     sound_played = True
+#                 except Exception as e:
+#                     print(f"Sound error: {e}")
+#         elif class_name in yellow_warning:
+#             color = (0, 255, 255)  # Yellow
+#             sound_played = False
+#         else:
+#             color = (0, 255, 0)  # Green
+#             sound_played = False
+
+
+#         cv2.putText(frame, label, (10, 30),
+#                     cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
+
+#         ret, buffer = cv2.imencode('.jpg', frame)
+#         frame = buffer.tobytes()
+
+#         yield (b'--frame\r\n'
+#                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Camera initialization
+camera1 = cv2.VideoCapture(0)
+camera2 = cv2.VideoCapture(1)
+camera3 = cv2.VideoCapture(2)
+
+if not camera1.isOpened():
+    print("Camera 1 not available")
+if not camera2.isOpened():
+    print("Camera 2 not available")
+if not camera3.isOpened():
+    print("Camera 3 not available")
+
+def gen_frames(camera, cam_id="Camera"):
+    sound_played = False
+    last_logged_class = None
+    last_logged_confidence = 0.0
+    confidence_threshold = 0.05
 
     while True:
         success, frame = camera.read()
@@ -77,17 +164,30 @@ def gen_frames():
         try:
             prediction = model.predict(img, verbose=0)
             class_index = np.argmax(prediction)
-            confidence = np.max(prediction)
+            confidence = float(np.max(prediction))
             class_name = class_names[class_index]
             label = f"{class_name}: {confidence * 100:.2f}%"
+
+            # if (class_name != last_logged_class) or (abs(confidence - last_logged_confidence) > confidence_threshold):
+            #     log_detection(class_name, confidence, source=cam_id)
+            #     last_logged_class = class_name
+            #     last_logged_confidence = confidence
+            
+            if class_name.lower() != "human" and (
+                    (class_name != last_logged_class) or (abs(confidence - last_logged_confidence) > confidence_threshold)
+                ):
+                    log_detection(class_name, confidence, source=cam_id)
+                    last_logged_class = class_name
+                    last_logged_confidence = confidence
+
+
         except Exception as e:
             label = f"Prediction error: {e}"
             class_name = ""
             confidence = 0.0
 
-        # Determine color and sound
         if class_name in red_warning:
-            color = (0, 0, 255)  # Red
+            color = (0, 0, 255)
             if not sound_played:
                 try:
                     warning_sound.play()
@@ -95,18 +195,14 @@ def gen_frames():
                 except Exception as e:
                     print(f"Sound error: {e}")
         elif class_name in yellow_warning:
-            color = (0, 255, 255)  # Yellow
+            color = (0, 255, 255)
             sound_played = False
         else:
-            color = (0, 255, 0)  # Green
+            color = (0, 255, 0)
             sound_played = False
 
-        # Overlay label on frame
-        cv2.putText(frame, label, (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
-
+        cv2.putText(frame, label, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.9, color, 2)
         ret, buffer = cv2.imencode('.jpg', frame)
         frame = buffer.tobytes()
 
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+        yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
