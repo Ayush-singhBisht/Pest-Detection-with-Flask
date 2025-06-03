@@ -1,0 +1,32 @@
+{% extends "dashboard.html" %} {% block content %}
+<h1>Upload Video for Pest Detection</h1>
+<form
+  action="{{ url_for('upload_video') }}"
+  method="POST"
+  enctype="multipart/form-data"
+>
+  <div style="margin: 20px 0">
+    <input type="file" name="video" accept="video/*" required />
+    <button
+      type="submit"
+      style="
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+      "
+    >
+      Upload & Analyze
+    </button>
+  </div>
+</form>
+
+{% if video_filename %}
+<h2>Prediction Results:</h2>
+<img
+  src="{{ url_for('video_feed_uploaded', filename=video_filename) }}"
+  alt="Live Prediction Stream"
+  style="max-width: 100%; border: 2px solid #ccc; padding: 4px"
+/>
+{% endif %} {% endblock %}

@@ -1,0 +1,17 @@
+{% extends "dashboard.html" %} {% block content %}
+<h2>Upload Image for Pest Detection</h2>
+<form method="post" enctype="multipart/form-data">
+  <input type="file" name="image" accept="image/*" />
+  <input type="submit" value="Predict" />
+</form>
+
+{% if prediction %}
+<h3>Prediction: {{ prediction }}</h3>
+{% endif %} {% if image_url %}
+<h4>Uploaded Image:</h4>
+<img
+  src="{{ image_url }}"
+  alt="Uploaded Image"
+  style="max-width: 400px; border: 1px solid #ccc"
+/>
+{% endif %} {% endblock %}

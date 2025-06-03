@@ -1,0 +1,8 @@
+{% extends "dashboard.html" %} {% block content %}
+<h1>Live Pest Detection</h1>
+<img
+  id="video-stream"
+  src="{{ url_for('video_feed') }}"
+  alt="Live Pest Detection Stream"
+/>
+{% endblock %}
